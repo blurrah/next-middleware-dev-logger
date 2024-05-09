@@ -57,7 +57,6 @@ test("middleware logs request with headers", async () => {
   const request = new NextRequest("http://localhost:3000");
   const middleware = createDevLoggerMiddleware({ enabled: true });
 
-  const bla = new NextFetchEvent({ request, page: "/" });
   const nextMiddlewareWithHeaders = () => {
     const response = NextResponse.next();
     response.headers.set("x-custom-header", "test");
@@ -70,10 +69,10 @@ test("middleware logs request with headers", async () => {
   );
 
   expect(response).toBeInstanceOf(NextResponse);
-  expect(consoleInfoSpy).toHaveBeenCalledTimes(3);
+  expect(consoleInfoSpy).toHaveBeenCalledTimes(4);
   // Indented header change log
   expect(consoleInfoSpy).toHaveBeenCalledWith(
-    formatLog('  x-custom-header: null -> "test"')
+    formatLog('  x-custom-header: "test"')
   );
 });
 

@@ -1,10 +1,5 @@
 import type { NextFetchEvent, NextMiddleware, NextRequest } from "next/server";
-import {
-  MiddlewareAction,
-  determineMiddlewareAction,
-  formatLog,
-  headersDiff,
-} from "./lib";
+import { MiddlewareAction, determineMiddlewareAction, formatLog } from "./lib";
 import { checkRedirectChain } from "./redirect-chain";
 
 type Options = {
@@ -52,21 +47,13 @@ export const createDevLoggerMiddleware = ({
         console.info(formatLog(`Response ${requestUrl}`));
       }
 
-      // Log changed headers
-      const headerDifferences = headersDiff(request.headers, response.headers);
-
-      if (headerDifferences.size > 0) {
-        console.info(formatLog("Headers changed:"));
-
-        for (const key of headerDifferences) {
-          console.info(
-            formatLog(
-              `  ${key}: ${request.headers.get(key)} -> "${response.headers.get(
-                key
-              )}"`
-            )
-          );
+      let isFirstHeader = true;
+      for (const [key, value] of response.headers.entries()) {
+        if (isFirstHeader) {
+          console.info(formatLog("Headers added to response:"));
+          isFirstHeader = false;
         }
+        console.info(formatLog(`  ${key}: "${value}"`));
       }
 
       // Extra check to make sure it's a NextResponse (can be a Response object, which doesn't have cookies)

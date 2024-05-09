@@ -1,88 +1,74 @@
-import type { NextRequest, NextResponse } from "next/server";
-import { headersDiff } from "./lib";
+import type { NextFetchEvent, NextMiddleware, NextRequest } from "next/server";
+import {
+  MiddlewareAction,
+  determineMiddlewareAction,
+  formatLog,
+  headersDiff,
+} from "./lib";
 
-export function createDevLoggerMiddleware(options: {}) {
-  return async function (request: NextRequest, response: NextResponse) {
-    if (process.env.NODE_ENV !== "development") {
-      // TODO: Use enabled statement in options for this
-      return response;
-    }
+type Options = {
+  /**
+   * Enable the middleware
+   * @default `process.env.NODE_ENV === "development"` will be used to log in development mode
+   * @warning This middleware can negatively impact performance when enabled in production, use with care!
+   */
+  enabled?: boolean;
+};
 
-    if (
-      request.headers.has("x-mdl-request-count") &&
-      Number(request.headers.get("x-mdl-request-count")) > 1
-    ) {
-      console.warn(
-        "!!!!!!!!!!!!!!!!!!! Multiple middleware calls for the same request !!!!!!!!!!!!!!!!!!!"
-      );
-    }
+export const createDevLoggerMiddleware = ({
+  enabled = process.env.NODE_ENV === "development",
+}: Options = {}) => {
+  return (middleware: NextMiddleware) =>
+    async (request: NextRequest, event: NextFetchEvent) => {
+      // Save request pathname before running middlewareChain
+      const requestUrl = request.nextUrl;
 
-    console.info("\n");
-    if (response.headers.has("x-middleware-rewrite")) {
-      console.info(
-        `[MDL] Response rewritten ${request.url} -> ${response.headers.get(
-          "x-middleware-rewrite"
-        )}`
-      );
-      // Response.redirected doesn't actually work
-    } else if (response.headers.has("location")) {
-      console.info(
-        `[MDL] Response redirected ${request.url} -> ${response.headers.get(
-          "location"
-        )}`
-      );
-    } else {
-      console.log(`[MDL] Response ${request.url}`);
-    }
-    const headerDifferences = headersDiff(request.headers, response.headers);
+      // Just always await the middleware for now (will wrap non-thenable function in Promise.resolve())
+      const response = await middleware(request, event);
 
-    if (headerDifferences.size > 0) {
-      console.info("[MDL] Headers changed");
-
-      for (const key of headerDifferences) {
-        console.info(
-          `[MDL] ${key}: ${request.headers.get(key)} -> ${response.headers.get(
-            key
-          )}`
-        );
+      // Return the response if disabled or if we can't deduce any information from the response object
+      if (!enabled || response === null || response === undefined) {
+        return response;
       }
-    }
 
-    // Set up chain in headers to track how many times this middleware has been called for a specific request
-    // This is used to detect multiple middleware calls for the same request
+      const responseAction = determineMiddlewareAction(response);
 
-    // We add this to the request headers for a possible incoming request, add it to the list of headers to override
-    if (response.headers.has("x-middleware-override-headers")) {
-      const overrideHeaders = response.headers.get(
-        "x-middleware-override-headers"
-      );
-      if (!overrideHeaders?.includes("x-mdl-response-count"))
-        response.headers.set(
-          "x-middleware-override-headers",
-          `${response.headers.get(
-            "x-middleware-override-headers"
-          )},x-mdl-response-count`
+      if (responseAction === MiddlewareAction.Rewrite) {
+        console.info(
+          formatLog(
+            `Rewrite: ${requestUrl} -> ${response.headers.get(
+              "x-middleware-rewrite"
+            )}`
+          )
         );
-    } else {
-      response.headers.set(
-        "x-middleware-override-headers",
-        "x-mdl-response-count"
-      );
-    }
+      } else if (responseAction === MiddlewareAction.Redirect) {
+        console.info(
+          formatLog(
+            `Redirect: ${requestUrl} -> ${response.headers.get("location")}`
+          )
+        );
+      } else {
+        console.info(formatLog(`Response ${requestUrl}`));
+      }
 
-    response.headers.set(
-      "x-middleware-request-mdl-response-count",
-      // Increment the count by 1 or use 1 if it doesn't exist
-      String(Number(request.headers.get("x-mdl-response-count")) + 1) || "1"
-    );
+      // Log changed headers
+      const headerDifferences = headersDiff(request.headers, response.headers);
 
-    console.log("response.headers", response.headers);
+      if (headerDifferences.size > 0) {
+        console.info(formatLog("Headers changed:"));
 
-    console.log(
-      "[MDL] Request count",
-      request.headers.get("x-mdl-request-count")
-    );
+        for (const key of headerDifferences) {
+          console.info(
+            formatLog(
+              `  ${key}: ${request.headers.get(key)} -> "${response.headers.get(
+                key
+              )}"`
+            )
+          );
+        }
+      }
 
-    return response;
-  };
-}
+      // Do response stuff here
+      return response;
+    };
+};

@@ -9,6 +9,12 @@ const consoleInfoSpy = vi.spyOn(console, "info");
 // Stub for NextResponse.next as a middleware
 const nextMiddleware = () => NextResponse.next();
 
+const createFetchEvent = (request: NextRequest) =>
+  new NextFetchEvent({
+    request: new NextRequest("http://localhost:3000"),
+    page: "/",
+  });
+
 beforeEach(() => {
   consoleInfoSpy.mockClear();
 });
@@ -19,9 +25,10 @@ test("middleware logs request", async () => {
 
   const middleware = createDevLoggerMiddleware({ enabled: true });
 
-  const bla = new NextFetchEvent({ request, page: "/" });
-
-  const response = await middleware(nextMiddleware)(request, bla);
+  const response = await middleware(nextMiddleware)(
+    request,
+    createFetchEvent(request)
+  );
 
   expect(response).toBeInstanceOf(NextResponse);
   expect(consoleInfoSpy).toHaveBeenCalledWith(
@@ -36,9 +43,10 @@ test("middleware is enabled in development mode by default", async () => {
   const request = new NextRequest("http://localhost:3000");
   const middleware = createDevLoggerMiddleware({});
 
-  const bla = new NextFetchEvent({ request, page: "/" });
-
-  const response = await middleware(nextMiddleware)(request, bla);
+  const response = await middleware(nextMiddleware)(
+    request,
+    createFetchEvent(request)
+  );
 
   expect(response).toBeInstanceOf(NextResponse);
   expect(consoleInfoSpy).toHaveBeenCalledWith(
@@ -57,7 +65,10 @@ test("middleware logs request with headers", async () => {
     return response;
   };
 
-  const response = await middleware(nextMiddlewareWithHeaders)(request, bla);
+  const response = await middleware(nextMiddlewareWithHeaders)(
+    request,
+    createFetchEvent(request)
+  );
 
   expect(response).toBeInstanceOf(NextResponse);
   expect(consoleInfoSpy).toHaveBeenCalledTimes(3);
@@ -71,11 +82,13 @@ test("middleware logs rewrite", async () => {
   const request = new NextRequest("http://localhost:3000");
   const middleware = createDevLoggerMiddleware({ enabled: true });
 
-  const bla = new NextFetchEvent({ request, page: "/" });
   const nextMiddlewareRewrite = () =>
     NextResponse.rewrite(new URL("/bla", request.url));
 
-  const response = await middleware(nextMiddlewareRewrite)(request, bla);
+  const response = await middleware(nextMiddlewareRewrite)(
+    request,
+    createFetchEvent(request)
+  );
 
   expect(response).toBeInstanceOf(NextResponse);
   expect(consoleInfoSpy).toHaveBeenCalledWith(
@@ -87,11 +100,13 @@ test("middleware logs redirect", async () => {
   const request = new NextRequest("http://localhost:3000");
   const middleware = createDevLoggerMiddleware({ enabled: true });
 
-  const bla = new NextFetchEvent({ request, page: "/" });
   const nextMiddlewareRedirect = () =>
     NextResponse.redirect(new URL("/bla", request.url));
 
-  const response = await middleware(nextMiddlewareRedirect)(request, bla);
+  const response = await middleware(nextMiddlewareRedirect)(
+    request,
+    createFetchEvent(request)
+  );
 
   expect(response).toBeInstanceOf(NextResponse);
   expect(consoleInfoSpy).toHaveBeenCalledWith(

@@ -126,8 +126,8 @@ test("middleware saves cookie with request chain when redirecting", async () => 
   );
 
   expect(response).toBeInstanceOf(NextResponse);
-  expect(response?.cookies.get("_mdl-requests")).toBeDefined();
-  expect(response.cookies.get("_mdl-requests")?.value).toBe(
+  expect((response as NextResponse).cookies.get("_mdl-requests")).toBeDefined();
+  expect((response as NextResponse).cookies.get("_mdl-requests")?.value).toBe(
     JSON.stringify(["http://localhost:3000/", "http://localhost:3000/bla"])
   );
 });

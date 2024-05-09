@@ -7,7 +7,7 @@ Useful since it can sometimes be a bit opaque what's happening with possible mul
 
 It compares the request and response and logs what's going to happen:
 - The navigation action (redirect, rewrite or next) and the response location
-- Changed headers
+- Headers added to the response object
 - Warn for redirect chains excessing 1 redirect
 
 TODO:

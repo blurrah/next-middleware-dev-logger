@@ -19,8 +19,7 @@ beforeEach(() => {
   consoleInfoSpy.mockClear();
 });
 
-test("middleware logs request", async () => {
-  // Middleware only runs in development
+test("middleware logs response", async () => {
   const request = new NextRequest("http://localhost:3000");
 
   const middleware = createDevLoggerMiddleware({ enabled: true });
@@ -111,5 +110,24 @@ test("middleware logs redirect", async () => {
   expect(response).toBeInstanceOf(NextResponse);
   expect(consoleInfoSpy).toHaveBeenCalledWith(
     formatLog("Redirect: http://localhost:3000/ -> http://localhost:3000/bla")
+  );
+});
+
+test("middleware saves cookie with request chain when redirecting", async () => {
+  const request = new NextRequest("http://localhost:3000");
+  const middleware = createDevLoggerMiddleware({ enabled: true });
+
+  const nextMiddlewareRedirect = () =>
+    NextResponse.redirect(new URL("/bla", request.url));
+
+  const response = await middleware(nextMiddlewareRedirect)(
+    request,
+    createFetchEvent(request)
+  );
+
+  expect(response).toBeInstanceOf(NextResponse);
+  expect(response?.cookies.get("_mdl-requests")).toBeDefined();
+  expect(response.cookies.get("_mdl-requests")?.value).toBe(
+    JSON.stringify(["http://localhost:3000/", "http://localhost:3000/bla"])
   );
 });

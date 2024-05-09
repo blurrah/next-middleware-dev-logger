@@ -5,6 +5,7 @@ import {
   formatLog,
   headersDiff,
 } from "./lib";
+import { checkRedirectChain } from "./redirect-chain";
 
 type Options = {
   /**
@@ -66,6 +67,18 @@ export const createDevLoggerMiddleware = ({
             )
           );
         }
+      }
+
+      // Extra check to make sure it's a NextResponse (can be a Response object, which doesn't have cookies)
+      if ("cookies" in response) {
+        // Check for excessive redirects
+        checkRedirectChain(request, response);
+      } else {
+        console.debug(
+          formatLog(
+            "Response is not a NextResponse object, cannot check redirect chain"
+          )
+        );
       }
 
       // Do response stuff here

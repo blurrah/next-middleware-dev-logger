@@ -82,3 +82,19 @@ test("middleware logs rewrite", async () => {
     formatLog("Rewrite: http://localhost:3000/ -> http://localhost:3000/bla")
   );
 });
+
+test("middleware logs redirect", async () => {
+  const request = new NextRequest("http://localhost:3000");
+  const middleware = createDevLoggerMiddleware({ enabled: true });
+
+  const bla = new NextFetchEvent({ request, page: "/" });
+  const nextMiddlewareRedirect = () =>
+    NextResponse.redirect(new URL("/bla", request.url));
+
+  const response = await middleware(nextMiddlewareRedirect)(request, bla);
+
+  expect(response).toBeInstanceOf(NextResponse);
+  expect(consoleInfoSpy).toHaveBeenCalledWith(
+    formatLog("Redirect: http://localhost:3000/ -> http://localhost:3000/bla")
+  );
+});

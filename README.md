@@ -3,14 +3,17 @@
 Extremely simple logger used to debug what your Next.js middleware is rewriting/redirecting.
 Useful since it can sometimes be a bit opaque what's happening with possible multiple redirects or rewrites.
 
-You should only r
+:warning: Only use this during development, not sure what the impact is for performance in production.
 
 It compares the request and response and logs what's going to happen:
-- Whether it redirects or rewrites the URL and where to
+- The navigation action (redirect, rewrite or next) and the response location
 - Changed headers
-- (TODO): Changed cookies
-- Warn for request
+- Warn for redirect chains excessing 1 redirect
 
+TODO:
+- Check for changed cookies
+- Check for additional request headers (not sure if possible)
+- Check more actions (writing responses and custom status codes)
 
 To install dependencies:
 

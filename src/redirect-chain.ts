@@ -19,7 +19,7 @@ export function checkRedirectChain(
   // Check for existing requests from the cookie
   try {
     chainUrls = JSON.parse(request.cookies.get("_mdl-requests")?.value ?? "[]");
-  } catch (_) {}
+  } catch (err) {}
 
   if (
     !Array.isArray(chainUrls) ||

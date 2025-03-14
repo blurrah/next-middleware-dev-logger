@@ -4,7 +4,9 @@ import { beforeEach, expect, test, vi } from "vitest";
 import { formatLog } from "./lib";
 import { createDevLoggerMiddleware } from "./middleware";
 
-const consoleInfoSpy = vi.spyOn(console, "info");
+// Remove mockImplementation if you want to see the log output in the console
+const consoleInfoSpy = vi.spyOn(console, "info").mockImplementation(() => {});
+const consoleWarnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
 
 // Stub for NextResponse.next as a middleware
 const nextMiddleware = () => NextResponse.next();
@@ -13,6 +15,9 @@ const createFetchEvent = (request: NextRequest) =>
   new NextFetchEvent({
     request: new NextRequest("http://localhost:3000"),
     page: "/",
+    context: {
+      waitUntil: vi.fn(),
+    },
   });
 
 beforeEach(() => {
@@ -37,7 +42,7 @@ test("middleware logs response", async () => {
 
 test("middleware is enabled in development mode by default", async () => {
   // Set NODE_ENV to development to enable middleware when no options are given
-  process.env.NODE_ENV = "development";
+  vi.stubEnv("NODE_ENV", "development");
 
   const request = new NextRequest("http://localhost:3000");
   const middleware = createDevLoggerMiddleware({});
@@ -128,5 +133,29 @@ test("middleware saves cookie with request chain when redirecting", async () => 
   expect((response as NextResponse).cookies.get("_mdl-requests")).toBeDefined();
   expect((response as NextResponse).cookies.get("_mdl-requests")?.value).toBe(
     JSON.stringify(["http://localhost:3000/", "http://localhost:3000/bla"])
+  );
+});
+
+test("middleware logs excessive redirect chain", async () => {
+  const request = new NextRequest("http://localhost:3000");
+  const middleware = createDevLoggerMiddleware({ enabled: true });
+
+  const nextMiddlewareRedirect = () =>
+    NextResponse.redirect(new URL("/bla", request.url));
+
+  const response = await middleware(nextMiddlewareRedirect)(
+    request,
+    createFetchEvent(request)
+  );
+
+  expect(response).toBeInstanceOf(NextResponse);
+  expect(consoleWarnSpy).toHaveBeenCalledWith(
+    formatLog("Warning excessive request sequence detected:")
+  );
+  expect(consoleWarnSpy).toHaveBeenCalledWith(
+    formatLog("  http://localhost:3000/")
+  );
+  expect(consoleWarnSpy).toHaveBeenCalledWith(
+    formatLog("  -> http://localhost:3000/bla")
   );
 });

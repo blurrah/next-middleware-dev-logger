@@ -1,10 +1,12 @@
-import { NextResponse } from "next/server";
+import type { NextResponse } from "next/server";
 
-export enum MiddlewareAction {
-  Redirect,
-  Rewrite,
-  Next,
-}
+export type MiddlewareAction =
+  (typeof MiddlewareAction)[keyof typeof MiddlewareAction];
+export const MiddlewareAction = {
+  Redirect: "redirect" as const,
+  Rewrite: "rewrite" as const,
+  Next: "next" as const,
+};
 
 /**
  * Determine the type of response action the middleware is doing
@@ -12,7 +14,9 @@ export enum MiddlewareAction {
 export function determineMiddlewareAction(response: NextResponse | Response) {
   if (response.headers.has("x-middleware-rewrite")) {
     return MiddlewareAction.Rewrite;
-  } else if (response.headers.has("location")) {
+  }
+
+  if (response.headers.has("location")) {
     return MiddlewareAction.Redirect;
   }
 

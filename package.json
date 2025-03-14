@@ -4,16 +4,16 @@
   "module": "./dist/es/index.js",
   "license": "MIT",
   "devDependencies": {
-    "@edge-runtime/primitives": "^4.1.0",
-    "@edge-runtime/types": "^2.2.9",
-    "@edge-runtime/vm": "^3.2.0",
-    "@types/bun": "latest",
-    "bunchee": "^5.1.5",
-    "vitest": "^1.6.0"
+    "@edge-runtime/primitives": "^6.0.0",
+    "@edge-runtime/types": "^4.0.0",
+    "@edge-runtime/vm": "^5.0.0",
+    "@types/bun": "^1.2.5",
+    "bunchee": "^6.4.0",
+    "vitest": "^3.0.8"
   },
   "peerDependencies": {
-    "next": ">=13",
-    "typescript": "^5.0.0"
+    "next": "^15.2.2",
+    "typescript": "^5.8.2"
   },
   "exports": {
     ".": {
@@ -31,5 +31,6 @@
     "dist"
   ],
   "type": "module",
-  "types": "./dist/es/index.d.ts"
+  "types": "./dist/es/index.d.ts",
+  "packageManager": "bun@1.2.4"
 }

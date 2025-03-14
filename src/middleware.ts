@@ -17,7 +17,7 @@ export const createDevLoggerMiddleware = ({
   return (middleware: NextMiddleware) =>
     async (request: NextRequest, event: NextFetchEvent) => {
       // Save request pathname before running middlewareChain
-      const requestUrl = request.nextUrl;
+      const requestUrl = request.nextUrl.toString(); // Need to copy the URL otherwise it stays the same
 
       // Just always await the middleware for now (will wrap non-thenable function in Promise.resolve())
       const response = await middleware(request, event);

@@ -8,6 +8,7 @@
     "@edge-runtime/types": "^4.0.0",
     "@edge-runtime/vm": "^5.0.0",
     "@types/bun": "^1.2.5",
+    "@vitest/coverage-v8": "3.0.8",
     "bunchee": "^6.4.0",
     "vitest": "^3.0.8"
   },

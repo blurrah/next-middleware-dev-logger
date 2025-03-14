@@ -25,35 +25,24 @@ export function checkRedirectChain(
     chainUrls = JSON.parse(request.cookies.get(COOKIE_NAME)?.value ?? "[]");
   } catch (err) {}
 
-  if (
-    !Array.isArray(chainUrls) ||
-    (request.url !== chainUrls[chainUrls.length - 1] && !isRedirect)
-  ) {
-    // If the request is not the last response in the chain and the response is not a redirect
-    // then the existing chain is invalid and we're not starting a new one, delete cookie and return early
-    response.cookies.delete(COOKIE_NAME);
-    return;
-  }
-
-  // Not a redirect, delete the cookie and return early to reset the chain
-  if (!isRedirect) {
+  if (!Array.isArray(chainUrls) || !isRedirect) {
+    // If it's not a valid array or a redirect we can delete the cookie and return early
     response.cookies.delete(COOKIE_NAME);
     return;
   }
 
   // If the response is a redirect, push it to the chain
   if (isRedirect && redirectTarget) {
-    if (chainUrls.length === 0) {
-      // Starting new chain, push the first request
+    if (
+      chainUrls.length === 0 ||
+      chainUrls[chainUrls.length - 1] !== request.url
+    ) {
+      // Either the chain is empty or the last item is not the current request URL
+      // In both cases we can start a new chain
       chainUrls = [request.url, redirectTarget];
-    }
-
-    // If the last item in the chain is the same as the current request, push the redirect target
-    if (chainUrls[chainUrls.length - 1] === request.url) {
+    } else if (chainUrls[chainUrls.length - 1] === request.url) {
+      // Continuing the chain, push the redirect target
       chainUrls.push(redirectTarget);
-    } else {
-      // The chain is invalid, so we create a new one
-      chainUrls = [request.url, redirectTarget];
     }
 
     // Update the cookie with the new chain

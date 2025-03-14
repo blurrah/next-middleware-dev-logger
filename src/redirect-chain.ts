@@ -25,32 +25,30 @@ export function checkRedirectChain(
     chainUrls = JSON.parse(request.cookies.get(COOKIE_NAME)?.value ?? "[]");
   } catch (err) {}
 
-  if (!Array.isArray(chainUrls) || !isRedirect) {
+  if (!isRedirect || !redirectTarget) {
     // If it's not a valid array or a redirect we can delete the cookie and return early
     response.cookies.delete(COOKIE_NAME);
     return;
   }
 
-  // If the response is a redirect, push it to the chain
-  if (isRedirect && redirectTarget) {
-    if (
-      chainUrls.length === 0 ||
-      chainUrls[chainUrls.length - 1] !== request.url
-    ) {
-      // Either the chain is empty or the last item is not the current request URL
-      // In both cases we can start a new chain
-      chainUrls = [request.url, redirectTarget];
-    } else if (chainUrls[chainUrls.length - 1] === request.url) {
-      // Continuing the chain, push the redirect target
-      chainUrls.push(redirectTarget);
-    }
-
-    // Update the cookie with the new chain
-    response.cookies.set(COOKIE_NAME, JSON.stringify(chainUrls), {
-      path: "/",
-      httpOnly: true,
-    });
+  if (
+    !Array.isArray(chainUrls) ||
+    chainUrls.length === 0 ||
+    chainUrls[chainUrls.length - 1] !== request.url
+  ) {
+    // Either the chain is empty/broken or the last item is not the current request URL
+    // In both cases we can start a new chain
+    chainUrls = [request.url, redirectTarget];
+  } else if (chainUrls[chainUrls.length - 1] === request.url) {
+    // Continuing the chain, push the redirect target
+    chainUrls.push(redirectTarget);
   }
+
+  // Update the cookie with the new chain
+  response.cookies.set(COOKIE_NAME, JSON.stringify(chainUrls), {
+    path: "/",
+    httpOnly: true,
+  });
 
   if (chainUrls.length > 2) {
     // The chain is longer than 2, log a warning

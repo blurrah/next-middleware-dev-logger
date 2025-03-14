@@ -1,6 +1,8 @@
 import type { NextRequest, NextResponse } from "next/server";
 import { formatLog } from "./lib";
 
+const COOKIE_NAME = "_mdl-requests";
+
 /**
  * Track the response chain and log any excessive request sequences
  *
@@ -20,7 +22,7 @@ export function checkRedirectChain(
 
   // Check for existing requests from the cookie
   try {
-    chainUrls = JSON.parse(request.cookies.get("_mdl-requests")?.value ?? "[]");
+    chainUrls = JSON.parse(request.cookies.get(COOKIE_NAME)?.value ?? "[]");
   } catch (err) {}
 
   if (
@@ -29,13 +31,13 @@ export function checkRedirectChain(
   ) {
     // If the request is not the last response in the chain and the response is not a redirect
     // then the existing chain is invalid and we're not starting a new one, delete cookie and return early
-    response.cookies.delete("_mdl-requests");
+    response.cookies.delete(COOKIE_NAME);
     return;
   }
 
   // Not a redirect, delete the cookie and return early to reset the chain
   if (!isRedirect) {
-    response.cookies.delete("_mdl-requests");
+    response.cookies.delete(COOKIE_NAME);
     return;
   }
 
@@ -55,7 +57,7 @@ export function checkRedirectChain(
     }
 
     // Update the cookie with the new chain
-    response.cookies.set("_mdl-requests", JSON.stringify(chainUrls), {
+    response.cookies.set(COOKIE_NAME, JSON.stringify(chainUrls), {
       path: "/",
       httpOnly: true,
     });
